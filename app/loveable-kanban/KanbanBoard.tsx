@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   DndContext,
   type DragEndEvent,
-  type DragOverEvent,
   type DragStartEvent,
   PointerSensor,
   useSensor,
@@ -66,7 +65,7 @@ const KanbanBoard: React.FC = () => {
     }
   };
 
-  const handleDragOver = (event: DragOverEvent) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (!over) return;
@@ -74,7 +73,106 @@ const KanbanBoard: React.FC = () => {
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    // If not dragging a task or over nothing/itself, return
+    // For moving tasks between columns
+    if (activeId.includes("task:") && overId.includes("column:")) {
+      const activeParts = activeId.replace("task:", "").split(":");
+      const overParts = overId.replace("column:", "").split(":");
+      const activeTaskId = activeParts[0];
+      const activeColumnId = activeParts[1];
+      const activeBoardId = activeParts[2];
+      const overColumnId = overParts[0];
+      const overBoardId = overParts[1];
+
+      if (activeColumnId !== overColumnId && activeBoardId === overBoardId) {
+        setBoards((prevBoards) => {
+          return prevBoards.map((board) => {
+            if (board.id !== activeBoardId) return board;
+
+            const taskToMove = board.columns
+              .find((col) => col.id === activeColumnId)
+              ?.tasks.find((task) => task.id === activeTaskId);
+
+            if (!taskToMove) return board;
+
+            const updatedColumns = board.columns.map((column) => {
+              if (column.id === activeColumnId) {
+                return {
+                  ...column,
+                  tasks: column.tasks.filter(
+                    (task) => task.id !== activeTaskId
+                  ),
+                };
+              }
+              if (column.id === overColumnId) {
+                return {
+                  ...column,
+                  tasks: [...column.tasks, taskToMove],
+                };
+              }
+              return column;
+            });
+
+            return {
+              ...board,
+              columns: updatedColumns,
+            };
+          });
+        });
+      }
+    }
+
+    // For task reordering within the same column
+    if (activeId.includes("task:") && overId.includes("task:")) {
+      const activeParts = activeId.replace("task:", "").split(":");
+      const overParts = overId.replace("task:", "").split(":");
+
+      const activeTaskId = activeParts[0];
+      const activeColumnId = activeParts[1];
+      const activeBoardId = activeParts[2];
+      const overTaskId = overParts[0];
+      const overColumnId = overParts[1];
+      const overBoardId = overParts[2];
+
+      if (
+        activeTaskId !== overTaskId &&
+        activeColumnId === overColumnId &&
+        activeBoardId === overBoardId
+      ) {
+        setBoards((prevBoards) => {
+          return prevBoards.map((board) => {
+            if (board.id !== activeBoardId) return board;
+
+            const updatedColumns = board.columns.map((column) => {
+              if (column.id === activeColumnId) {
+                const activeTaskIndex = column.tasks.findIndex(
+                  (task) => task.id === activeTaskId
+                );
+                const overTaskIndex = column.tasks.findIndex(
+                  (task) => task.id === overTaskId
+                );
+
+                return {
+                  ...column,
+                  tasks: arrayMove(
+                    column.tasks,
+                    activeTaskIndex,
+                    overTaskIndex
+                  ),
+                };
+              }
+              return column;
+            });
+
+            return {
+              ...board,
+              columns: updatedColumns,
+            };
+          });
+        });
+      }
+    }
+
+    // For moving tasks between boards
     if (!activeId.includes("task:") || activeId === overId) return;
 
     // Format: "task:taskId:columnId:boardId"
@@ -83,7 +181,8 @@ const KanbanBoard: React.FC = () => {
     const activeColumnId = activeParts[1];
     const activeBoardId = activeParts[2];
 
-    let overColumnId: string = "", overBoardId: string = "";
+    let overColumnId: string = "",
+      overBoardId: string = "";
 
     // If over a task
     if (overId.includes("task:")) {
@@ -96,8 +195,7 @@ const KanbanBoard: React.FC = () => {
       const overParts = overId.replace("column:", "").split(":");
       overColumnId = overParts[0];
       overBoardId = overParts[1];
-    }
-    else {
+    } else {
       return; // Exit if not over a valid target
     }
 
@@ -116,6 +214,14 @@ const KanbanBoard: React.FC = () => {
 
       // Find the target board and column
       const overBoard = prevBoards.find((board) => board.id === overBoardId);
+
+      if (!activeColumn || !overBoard) return prevBoards;
+
+      // * if in same board return the same boards
+      if (activeBoardId === overBoardId) {
+        return prevBoards;
+      }
+
       const overColumn = overBoard?.columns.find(
         (col) => col.id === overColumnId
       );
@@ -183,101 +289,6 @@ const KanbanBoard: React.FC = () => {
         return board;
       });
     });
-  };
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (!over) return;
-
-    const activeId = active.id as string;
-    const overId = over.id as string;
-
-    // For column reordering
-    if (activeId.includes("column:") && overId.includes("column:")) {
-      const activeParts = activeId.replace("column:", "").split(":");
-      const overParts = overId.replace("column:", "").split(":");
-
-      const activeColumnId = activeParts[0];
-      const activeBoardId = activeParts[1];
-      const overColumnId = overParts[0];
-      const overBoardId = overParts[1];
-
-      // Only reorder columns within the same board
-      if (activeColumnId !== overColumnId && activeBoardId === overBoardId) {
-        setBoards((prevBoards) => {
-          return prevBoards.map((board) => {
-            if (board.id !== activeBoardId) return board;
-
-            const activeColumnIndex = board.columns.findIndex(
-              (col) => col.id === activeColumnId
-            );
-            const overColumnIndex = board.columns.findIndex(
-              (col) => col.id === overColumnId
-            );
-
-            return {
-              ...board,
-              columns: arrayMove(
-                board.columns,
-                activeColumnIndex,
-                overColumnIndex
-              ),
-            };
-          });
-        });
-      }
-    }
-
-    // For task reordering within the same column
-    if (activeId.includes("task:") && overId.includes("task:")) {
-      const activeParts = activeId.replace("task:", "").split(":");
-      const overParts = overId.replace("task:", "").split(":");
-
-      const activeTaskId = activeParts[0];
-      const activeColumnId = activeParts[1];
-      const activeBoardId = activeParts[2];
-      const overTaskId = overParts[0];
-      const overColumnId = overParts[1];
-      const overBoardId = overParts[2];
-
-      if (
-        activeTaskId !== overTaskId &&
-        activeColumnId === overColumnId &&
-        activeBoardId === overBoardId
-      ) {
-        setBoards((prevBoards) => {
-          return prevBoards.map((board) => {
-            if (board.id !== activeBoardId) return board;
-
-            const updatedColumns = board.columns.map((column) => {
-              if (column.id === activeColumnId) {
-                const activeTaskIndex = column.tasks.findIndex(
-                  (task) => task.id === activeTaskId
-                );
-                const overTaskIndex = column.tasks.findIndex(
-                  (task) => task.id === overTaskId
-                );
-
-                return {
-                  ...column,
-                  tasks: arrayMove(
-                    column.tasks,
-                    activeTaskIndex,
-                    overTaskIndex
-                  ),
-                };
-              }
-              return column;
-            });
-
-            return {
-              ...board,
-              columns: updatedColumns,
-            };
-          });
-        });
-      }
-    }
 
     setActiveTask(null);
     setActiveColumn(null);
@@ -381,7 +392,6 @@ const KanbanBoard: React.FC = () => {
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
         <div className="flex flex-col gap-8">

@@ -54,12 +54,12 @@ const KanbanCard: React.FC<KanbanCardProps> = ({
     data: { type: "task", task, columnId },
   });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 999 : 1,
-  };
+  // const style = {
+  //   transform: CSS.Transform.toString(transform),
+  //   transition,
+  //   opacity: 1,
+  //   zIndex: isDragging ? 999 : 1,
+  // };
 
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
@@ -81,7 +81,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({
     <>
       <div
         ref={setNodeRef}
-        style={style}
+        // style={style}
         {...attributes}
         {...listeners}
         className={`kanban-card group`}
