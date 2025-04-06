@@ -128,3 +128,22 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.kanban-column {
+  min-height: 500px;
+  transition: background-color 0.2s ease;
+}
+
+.kanban-column-header {
+  @apply flex items-center justify-between px-3 py-2;
+}
+
+.kanban-column-content {
+  min-height: 200px;
+  transition: background-color 0.2s ease;
+}
+
+.kanban-card {
+  @apply bg-card rounded-md shadow-sm border p-3 mb-3 cursor-pointer hover:shadow-md transition-all;
+  touch-action: none;
+}
