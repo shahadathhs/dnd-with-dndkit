@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { type Column, type Task } from './KanbanBoard';
+import { type Column, type Task } from './types';
 import KanbanCard from './KanbanCard';
 import { Plus, MoreHorizontal, Trash2 } from 'lucide-react';
 import { Input } from '~/components/ui/input';
@@ -118,7 +118,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
       </div>
 
       <div className="kanban-column-content flex-grow p-2">
-        {column.tasks.map((task) => (
+        {column.tasks.map((task: Task) => (
           <KanbanCard
             key={task.id}
             task={task}
