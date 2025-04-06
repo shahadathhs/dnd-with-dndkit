@@ -38,7 +38,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
     transition,
     isDragging,
   } = useSortable({
-    id: `column:${column.id}`,
+    id: `column:${column.id}:${boardId}`,
     data: { type: "column", column },
   });
 

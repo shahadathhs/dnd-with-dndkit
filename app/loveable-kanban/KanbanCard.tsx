@@ -50,7 +50,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({
     transition,
     isDragging,
   } = useSortable({
-    id: `task:${task.id}:${columnId}`,
+    id: `task:${task.id}:${columnId}:${boardId}`,
     data: { type: "task", task, columnId },
   });
 

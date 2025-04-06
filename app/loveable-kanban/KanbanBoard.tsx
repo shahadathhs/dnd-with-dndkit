@@ -22,27 +22,43 @@ const KanbanBoard: React.FC = () => {
   const [boards, setBoards] = useState<Board[]>(initialBoards);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
+  const [editingBoardId, setEditingBoardId] = useState<string | null>(null);
+  const [editingBoardTitle, setEditingBoardTitle] = useState<string>("");
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
-  const handleDragStart = (event: DragStartEvent, boardId: string) => {
+  const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const id = active.id as string;
 
     // Check if we're dragging a task
     if (id.includes("task:")) {
-      const taskId = id.replace("task:", "").split(":")[0];
-      const columnId = id.split(":")[2];
-      const boardColumns = boards.find((b) => b.id === boardId)?.columns || [];
-      const column = boardColumns.find((col) => col.id === columnId);
+      // Format: "task:taskId:columnId:boardId"
+      const parts = id.replace("task:", "").split(":");
+      const taskId = parts[0];
+      const columnId = parts[1];
+      const boardId = parts[2];
+
+      const board = boards.find((b) => b.id === boardId);
+      const column = board?.columns.find((col) => col.id === columnId);
       const task = column?.tasks.find((t) => t.id === taskId);
 
       if (task) {
         setActiveTask(task);
       }
     } else if (id.includes("column:")) {
-      // We're dragging a column
-      const columnId = id.replace("column:", "");
-      const boardColumns = boards.find((b) => b.id === boardId)?.columns || [];
-      const column = boardColumns.find((col) => col.id === columnId);
+      // Format: "column:columnId:boardId"
+      const parts = id.replace("column:", "").split(":");
+      const columnId = parts[0];
+      const boardId = parts[1];
+
+      const board = boards.find((b) => b.id === boardId);
+      const column = board?.columns.find((col) => col.id === columnId);
 
       if (column) {
         setActiveColumn(column);
@@ -50,7 +66,7 @@ const KanbanBoard: React.FC = () => {
     }
   };
 
-  const handleDragOver = (event: DragOverEvent, boardId: string) => {
+  const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
 
     if (!over) return;
@@ -61,67 +77,114 @@ const KanbanBoard: React.FC = () => {
     // If not dragging a task or over nothing/itself, return
     if (!activeId.includes("task:") || activeId === overId) return;
 
-    const activeColumnId = activeId.split(":")[2];
-    let overColumnId = overId.split(":")[2];
+    // Format: "task:taskId:columnId:boardId"
+    const activeParts = activeId.replace("task:", "").split(":");
+    const activeTaskId = activeParts[0];
+    const activeColumnId = activeParts[1];
+    const activeBoardId = activeParts[2];
 
-    // If over a task, extract the column id from the task id
+    let overColumnId: string = "", overBoardId: string = "";
+
+    // If over a task
     if (overId.includes("task:")) {
-      overColumnId = overId.split(":")[2];
-    } else if (overId.includes("column:")) {
-      overColumnId = overId.replace("column:", "");
+      const overParts = overId.replace("task:", "").split(":");
+      overColumnId = overParts[1];
+      overBoardId = overParts[2];
+    }
+    // If over a column
+    else if (overId.includes("column:")) {
+      const overParts = overId.replace("column:", "").split(":");
+      overColumnId = overParts[0];
+      overBoardId = overParts[1];
+    }
+    else {
+      return; // Exit if not over a valid target
     }
 
-    if (activeColumnId === overColumnId) return;
+    // If dropping in the same column, nothing to do in dragOver
+    if (activeColumnId === overColumnId && activeBoardId === overBoardId)
+      return;
 
     setBoards((prevBoards) => {
+      // Find the active board and column
+      const activeBoard = prevBoards.find(
+        (board) => board.id === activeBoardId
+      );
+      const activeColumn = activeBoard?.columns.find(
+        (col) => col.id === activeColumnId
+      );
+
+      // Find the target board and column
+      const overBoard = prevBoards.find((board) => board.id === overBoardId);
+      const overColumn = overBoard?.columns.find(
+        (col) => col.id === overColumnId
+      );
+
+      if (!activeColumn || !overColumn) return prevBoards;
+
+      // Find the task to move
+      const activeTaskIndex = activeColumn.tasks.findIndex(
+        (task) => task.id === activeTaskId
+      );
+      if (activeTaskIndex === -1) return prevBoards;
+
+      const taskToMove = activeColumn.tasks[activeTaskIndex];
+
       return prevBoards.map((board) => {
-        if (board.id !== boardId) return board;
+        // Handle the source board
+        if (board.id === activeBoardId) {
+          const updatedColumns = board.columns.map((column) => {
+            // Remove from the active column
+            if (column.id === activeColumnId) {
+              return {
+                ...column,
+                tasks: column.tasks.filter(
+                  (_, index) => index !== activeTaskIndex
+                ),
+              };
+            }
 
-        const activeColumn = board.columns.find(
-          (col) => col.id === activeColumnId
-        );
-        const overColumn = board.columns.find((col) => col.id === overColumnId);
+            // Add to the over column if in the same board
+            if (activeBoardId === overBoardId && column.id === overColumnId) {
+              return {
+                ...column,
+                tasks: [...column.tasks, taskToMove],
+              };
+            }
 
-        if (!activeColumn || !overColumn) return board;
+            return column;
+          });
 
-        const activeTaskIndex = activeColumn.tasks.findIndex(
-          (task) => `task:${task.id}:${activeColumnId}` === activeId
-        );
-        if (activeTaskIndex === -1) return board;
+          return {
+            ...board,
+            columns: updatedColumns,
+          };
+        }
 
-        const task = activeColumn.tasks[activeTaskIndex];
+        // Handle the target board if it's different
+        if (board.id === overBoardId && activeBoardId !== overBoardId) {
+          const updatedColumns = board.columns.map((column) => {
+            // Add to the over column
+            if (column.id === overColumnId) {
+              return {
+                ...column,
+                tasks: [...column.tasks, taskToMove],
+              };
+            }
+            return column;
+          });
 
-        const updatedColumns = board.columns.map((column) => {
-          // Remove from the active column
-          if (column.id === activeColumnId) {
-            return {
-              ...column,
-              tasks: column.tasks.filter(
-                (_, index) => index !== activeTaskIndex
-              ),
-            };
-          }
+          return {
+            ...board,
+            columns: updatedColumns,
+          };
+        }
 
-          // Add to the over column
-          if (column.id === overColumnId) {
-            return {
-              ...column,
-              tasks: [...column.tasks, task],
-            };
-          }
-
-          return column;
-        });
-
-        return {
-          ...board,
-          columns: updatedColumns,
-        };
+        return board;
       });
     });
   };
-
-  const handleDragEnd = (event: DragEndEvent, boardId: string) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (!over) return;
@@ -131,13 +194,19 @@ const KanbanBoard: React.FC = () => {
 
     // For column reordering
     if (activeId.includes("column:") && overId.includes("column:")) {
-      const activeColumnId = activeId.replace("column:", "");
-      const overColumnId = overId.replace("column:", "");
+      const activeParts = activeId.replace("column:", "").split(":");
+      const overParts = overId.replace("column:", "").split(":");
 
-      if (activeColumnId !== overColumnId) {
+      const activeColumnId = activeParts[0];
+      const activeBoardId = activeParts[1];
+      const overColumnId = overParts[0];
+      const overBoardId = overParts[1];
+
+      // Only reorder columns within the same board
+      if (activeColumnId !== overColumnId && activeBoardId === overBoardId) {
         setBoards((prevBoards) => {
           return prevBoards.map((board) => {
-            if (board.id !== boardId) return board;
+            if (board.id !== activeBoardId) return board;
 
             const activeColumnIndex = board.columns.findIndex(
               (col) => col.id === activeColumnId
@@ -161,15 +230,24 @@ const KanbanBoard: React.FC = () => {
 
     // For task reordering within the same column
     if (activeId.includes("task:") && overId.includes("task:")) {
-      const activeTaskId = activeId.split(":")[1];
-      const overTaskId = overId.split(":")[1];
-      const activeColumnId = activeId.split(":")[2];
-      const overColumnId = overId.split(":")[2];
+      const activeParts = activeId.replace("task:", "").split(":");
+      const overParts = overId.replace("task:", "").split(":");
 
-      if (activeTaskId !== overTaskId && activeColumnId === overColumnId) {
+      const activeTaskId = activeParts[0];
+      const activeColumnId = activeParts[1];
+      const activeBoardId = activeParts[2];
+      const overTaskId = overParts[0];
+      const overColumnId = overParts[1];
+      const overBoardId = overParts[2];
+
+      if (
+        activeTaskId !== overTaskId &&
+        activeColumnId === overColumnId &&
+        activeBoardId === overBoardId
+      ) {
         setBoards((prevBoards) => {
           return prevBoards.map((board) => {
-            if (board.id !== boardId) return board;
+            if (board.id !== activeBoardId) return board;
 
             const updatedColumns = board.columns.map((column) => {
               if (column.id === activeColumnId) {
@@ -231,16 +309,6 @@ const KanbanBoard: React.FC = () => {
     setBoards([...boards, newBoard]);
   };
 
-  const [editingBoardId, setEditingBoardId] = useState<string | null>(null);
-  const [editingBoardTitle, setEditingBoardTitle] = useState<string>("");
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  );
-
   const deleteBoard = (boardId: string) => {
     setBoards((prevBoards) =>
       prevBoards.filter((board) => board.id !== boardId)
@@ -300,7 +368,6 @@ const KanbanBoard: React.FC = () => {
     });
   };
 
-
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-6">
@@ -310,82 +377,84 @@ const KanbanBoard: React.FC = () => {
         </Button>
       </div>
 
-
-      <div className="flex flex-col gap-8">
-        {boards.map((board) => (
-          <div key={board.id} className="border rounded-lg p-4 shadow-sm">
-      <div className="flex justify-between items-center mb-4">
-        {editingBoardId === board.id ? (
-          <div className="flex items-center gap-2">
-            <Input
-              value={editingBoardTitle}
-              onChange={(e) => setEditingBoardTitle(e.target.value)}
-              className="text-xl font-semibold w-64"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  saveEditingBoardTitle();
-                }
-              }}
-              autoFocus
-            />
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={saveEditingBoardTitle}
-              className="p-1"
-            >
-              <Check size={16} />
-            </Button>
-          </div>
-        ) : (
-          <div
-            className="text-xl font-semibold flex items-center gap-2 cursor-pointer"
-            onClick={() => startEditingBoardTitle(board)}
-          >
-            <span>{board.title}</span>
-            <Edit size={14} className="text-gray-500" />
-          </div>
-        )}
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => addNewColumn(board.id)}
-            className="flex items-center gap-1"
-          >
-            <Plus size={16} /> Add Column
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-red-500"
-            onClick={() => deleteBoard(board.id)}
-          >
-            <Trash2 size={16} />
-          </Button>
-        </div>
-      </div>
-
+      {/* Single DndContext wrapping all boards */}
       <DndContext
         sensors={sensors}
-        onDragStart={(event) => handleDragStart(event, board.id)}
-        onDragOver={(event) => handleDragOver(event, board.id)}
-        onDragEnd={(event) => handleDragEnd(event, board.id)}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {board.columns.map((column) => (
-            <KanbanColumn
-              key={column.id}
-              column={column}
-              boardId={board.id}
-              boards={boards}
-              setBoards={setBoards}
-              deleteColumn={(columnId) => deleteColumn(board.id, columnId)}
-            />
+        <div className="flex flex-col gap-8">
+          {boards.map((board) => (
+            <div key={board.id} className="border rounded-lg p-4 shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                {editingBoardId === board.id ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={editingBoardTitle}
+                      onChange={(e) => setEditingBoardTitle(e.target.value)}
+                      className="text-xl font-semibold w-64"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          saveEditingBoardTitle();
+                        }
+                      }}
+                      autoFocus
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={saveEditingBoardTitle}
+                      className="p-1"
+                    >
+                      <Check size={16} />
+                    </Button>
+                  </div>
+                ) : (
+                  <div
+                    className="text-xl font-semibold flex items-center gap-2 cursor-pointer"
+                    onClick={() => startEditingBoardTitle(board)}
+                  >
+                    <span>{board.title}</span>
+                    <Edit size={14} className="text-gray-500" />
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => addNewColumn(board.id)}
+                    className="flex items-center gap-1"
+                  >
+                    <Plus size={16} /> Add Column
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-red-500"
+                    onClick={() => deleteBoard(board.id)}
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex gap-4 overflow-x-auto pb-4">
+                {board.columns.map((column) => (
+                  <KanbanColumn
+                    key={column.id}
+                    column={column}
+                    boardId={board.id}
+                    boards={boards}
+                    setBoards={setBoards}
+                    deleteColumn={(columnId) =>
+                      deleteColumn(board.id, columnId)
+                    }
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </DndContext>
-    </div>
-        ))}
-      </div>
     </div>
   );
 };
