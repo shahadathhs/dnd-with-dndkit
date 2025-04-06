@@ -17,22 +17,11 @@ import { Input } from "~/components/ui/input";
 import type { Board, Column } from "./types";
 import type { Task } from "./types";
 import { initialBoards } from "./constant";
-import SingleBoard from "./SingleBoard";
 
 const KanbanBoard: React.FC = () => {
   const [boards, setBoards] = useState<Board[]>(initialBoards);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
-  const [editingBoardId, setEditingBoardId] = useState<string | null>(null);
-  const [editingBoardTitle, setEditingBoardTitle] = useState<string>("");
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  );
 
   const handleDragStart = (event: DragStartEvent, boardId: string) => {
     const { active } = event;
@@ -216,141 +205,6 @@ const KanbanBoard: React.FC = () => {
     setActiveColumn(null);
   };
 
-  const addNewColumn = (boardId: string) => {
-    const newColumn: Column = {
-      id: uuidv4(),
-      title: "New Column",
-      tasks: [],
-    };
-
-    setBoards((prevBoards) => {
-      return prevBoards.map((board) => {
-        if (board.id === boardId) {
-          return {
-            ...board,
-            columns: [...board.columns, newColumn],
-          };
-        }
-        return board;
-      });
-    });
-  };
-
-  const addNewTask = (boardId: string, columnId: string) => {
-    const newTask: Task = {
-      id: uuidv4(),
-      title: "New Task",
-      description: "Add description here",
-    };
-
-    setBoards((prevBoards) => {
-      return prevBoards.map((board) => {
-        if (board.id === boardId) {
-          const updatedColumns = board.columns.map((column) =>
-            column.id === columnId
-              ? { ...column, tasks: [...column.tasks, newTask] }
-              : column
-          );
-
-          return {
-            ...board,
-            columns: updatedColumns,
-          };
-        }
-        return board;
-      });
-    });
-  };
-
-  const updateColumnTitle = (
-    boardId: string,
-    columnId: string,
-    newTitle: string
-  ) => {
-    setBoards((prevBoards) => {
-      return prevBoards.map((board) => {
-        if (board.id === boardId) {
-          const updatedColumns = board.columns.map((column) =>
-            column.id === columnId ? { ...column, title: newTitle } : column
-          );
-
-          return {
-            ...board,
-            columns: updatedColumns,
-          };
-        }
-        return board;
-      });
-    });
-  };
-
-  const updateTask = (
-    boardId: string,
-    columnId: string,
-    taskId: string,
-    updatedTask: Partial<Task>
-  ) => {
-    setBoards((prevBoards) => {
-      return prevBoards.map((board) => {
-        if (board.id === boardId) {
-          const updatedColumns = board.columns.map((column) =>
-            column.id === columnId
-              ? {
-                  ...column,
-                  tasks: column.tasks.map((task) =>
-                    task.id === taskId ? { ...task, ...updatedTask } : task
-                  ),
-                }
-              : column
-          );
-
-          return {
-            ...board,
-            columns: updatedColumns,
-          };
-        }
-        return board;
-      });
-    });
-  };
-
-  const deleteTask = (boardId: string, columnId: string, taskId: string) => {
-    setBoards((prevBoards) => {
-      return prevBoards.map((board) => {
-        if (board.id === boardId) {
-          const updatedColumns = board.columns.map((column) =>
-            column.id === columnId
-              ? {
-                  ...column,
-                  tasks: column.tasks.filter((task) => task.id !== taskId),
-                }
-              : column
-          );
-
-          return {
-            ...board,
-            columns: updatedColumns,
-          };
-        }
-        return board;
-      });
-    });
-  };
-
-  const deleteColumn = (boardId: string, columnId: string) => {
-    setBoards((prevBoards) => {
-      return prevBoards.map((board) => {
-        if (board.id === boardId) {
-          return {
-            ...board,
-            columns: board.columns.filter((column) => column.id !== columnId),
-          };
-        }
-        return board;
-      });
-    });
-  };
-
   const addNewBoard = () => {
     const newBoard: Board = {
       id: uuidv4(),
@@ -377,6 +231,76 @@ const KanbanBoard: React.FC = () => {
     setBoards([...boards, newBoard]);
   };
 
+  const [editingBoardId, setEditingBoardId] = useState<string | null>(null);
+  const [editingBoardTitle, setEditingBoardTitle] = useState<string>("");
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  const deleteBoard = (boardId: string) => {
+    setBoards((prevBoards) =>
+      prevBoards.filter((board) => board.id !== boardId)
+    );
+  };
+  const startEditingBoardTitle = (board: Board) => {
+    setEditingBoardId(board.id);
+    setEditingBoardTitle(board.title);
+  };
+
+  const saveEditingBoardTitle = () => {
+    if (!editingBoardId) return;
+
+    setBoards((prevBoards) =>
+      prevBoards.map((board) =>
+        board.id === editingBoardId
+          ? { ...board, title: editingBoardTitle }
+          : board
+      )
+    );
+
+    setEditingBoardId(null);
+    setEditingBoardTitle("");
+  };
+
+  const addNewColumn = (boardId: string) => {
+    const newColumn: Column = {
+      id: uuidv4(),
+      title: "New Column",
+      tasks: [],
+    };
+
+    setBoards((prevBoards) => {
+      return prevBoards.map((board) => {
+        if (board.id === boardId) {
+          return {
+            ...board,
+            columns: [...board.columns, newColumn],
+          };
+        }
+        return board;
+      });
+    });
+  };
+
+  const deleteColumn = (boardId: string, columnId: string) => {
+    setBoards((prevBoards) => {
+      return prevBoards.map((board) => {
+        if (board.id === boardId) {
+          return {
+            ...board,
+            columns: board.columns.filter((column) => column.id !== columnId),
+          };
+        }
+        return board;
+      });
+    });
+  };
+
+
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-6">
@@ -386,17 +310,80 @@ const KanbanBoard: React.FC = () => {
         </Button>
       </div>
 
+
       <div className="flex flex-col gap-8">
         {boards.map((board) => (
-          <SingleBoard
-            key={board.id}
-            board={board}
-            boards={boards}
-            setBoards={setBoards}
-            handleDragEnd={handleDragEnd}
-            handleDragOver={handleDragOver}
-            handleDragStart={handleDragStart}
-          />
+          <div key={board.id} className="border rounded-lg p-4 shadow-sm">
+      <div className="flex justify-between items-center mb-4">
+        {editingBoardId === board.id ? (
+          <div className="flex items-center gap-2">
+            <Input
+              value={editingBoardTitle}
+              onChange={(e) => setEditingBoardTitle(e.target.value)}
+              className="text-xl font-semibold w-64"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  saveEditingBoardTitle();
+                }
+              }}
+              autoFocus
+            />
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={saveEditingBoardTitle}
+              className="p-1"
+            >
+              <Check size={16} />
+            </Button>
+          </div>
+        ) : (
+          <div
+            className="text-xl font-semibold flex items-center gap-2 cursor-pointer"
+            onClick={() => startEditingBoardTitle(board)}
+          >
+            <span>{board.title}</span>
+            <Edit size={14} className="text-gray-500" />
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => addNewColumn(board.id)}
+            className="flex items-center gap-1"
+          >
+            <Plus size={16} /> Add Column
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-red-500"
+            onClick={() => deleteBoard(board.id)}
+          >
+            <Trash2 size={16} />
+          </Button>
+        </div>
+      </div>
+
+      <DndContext
+        sensors={sensors}
+        onDragStart={(event) => handleDragStart(event, board.id)}
+        onDragOver={(event) => handleDragOver(event, board.id)}
+        onDragEnd={(event) => handleDragEnd(event, board.id)}
+      >
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {board.columns.map((column) => (
+            <KanbanColumn
+              key={column.id}
+              column={column}
+              boardId={board.id}
+              boards={boards}
+              setBoards={setBoards}
+              deleteColumn={(columnId) => deleteColumn(board.id, columnId)}
+            />
+          ))}
+        </div>
+      </DndContext>
+    </div>
         ))}
       </div>
     </div>
