@@ -1,43 +1,45 @@
-import React, { useState } from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { type Column, type Task } from './types';
-import KanbanCard from './KanbanCard';
-import { Plus, MoreHorizontal, Trash2 } from 'lucide-react';
-import { Input } from '~/components/ui/input';
-import { Button } from '~/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
+import React, { useState } from "react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { type Board, type Column, type Task } from "./types";
+import KanbanCard from "./KanbanCard";
+import { Plus, MoreHorizontal, Trash2 } from "lucide-react";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import { v4 as uuidv4 } from "uuid";
 
 interface KanbanColumnProps {
   column: Column;
-  addNewTask: (columnId: string) => void;
-  updateColumnTitle: (columnId: string, title: string) => void;
-  updateTask: (columnId: string, taskId: string, updatedTask: Partial<Task>) => void;
-  deleteTask: (columnId: string, taskId: string) => void;
+  boardId: string;
+  boards: Board[];
+  setBoards: React.Dispatch<React.SetStateAction<Board[]>>;
   deleteColumn: (columnId: string) => void;
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ 
-  column, 
-  addNewTask, 
-  updateColumnTitle, 
-  updateTask,
-  deleteTask,
-  deleteColumn
+const KanbanColumn: React.FC<KanbanColumnProps> = ({
+  column,
+  boardId,
+  setBoards,
+  deleteColumn,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(column.title);
 
-  const { 
-    attributes, 
-    listeners, 
-    setNodeRef, 
-    transform, 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
     transition,
-    isDragging
+    isDragging,
   } = useSortable({
     id: `column:${column.id}`,
-    data: { type: 'column', column }
+    data: { type: "column", column },
   });
 
   const style = {
@@ -52,7 +54,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
 
   const handleTitleBlur = () => {
     if (title.trim()) {
-      updateColumnTitle(column.id, title);
+      updateColumnTitle(boardId, column.id, title);
     } else {
       setTitle(column.title);
     }
@@ -66,6 +68,107 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
 
   const handleDeleteColumn = () => {
     deleteColumn(column.id);
+  };
+
+  const addNewTask = (boardId: string, columnId: string) => {
+    const newTask: Task = {
+      id: uuidv4(),
+      title: "New Task",
+      description: "Add description here",
+    };
+
+    setBoards((prevBoards) => {
+      return prevBoards.map((board) => {
+        if (board.id === boardId) {
+          const updatedColumns = board.columns.map((column) =>
+            column.id === columnId
+              ? { ...column, tasks: [...column.tasks, newTask] }
+              : column
+          );
+
+          return {
+            ...board,
+            columns: updatedColumns,
+          };
+        }
+        return board;
+      });
+    });
+  };
+
+  const updateColumnTitle = (
+    boardId: string,
+    columnId: string,
+    newTitle: string
+  ) => {
+    setBoards((prevBoards) => {
+      return prevBoards.map((board) => {
+        if (board.id === boardId) {
+          const updatedColumns = board.columns.map((column) =>
+            column.id === columnId ? { ...column, title: newTitle } : column
+          );
+
+          return {
+            ...board,
+            columns: updatedColumns,
+          };
+        }
+        return board;
+      });
+    });
+  };
+
+  const updateTask = (
+    boardId: string,
+    columnId: string,
+    taskId: string,
+    updatedTask: Partial<Task>
+  ) => {
+    setBoards((prevBoards) => {
+      return prevBoards.map((board) => {
+        if (board.id === boardId) {
+          const updatedColumns = board.columns.map((column) =>
+            column.id === columnId
+              ? {
+                  ...column,
+                  tasks: column.tasks.map((task) =>
+                    task.id === taskId ? { ...task, ...updatedTask } : task
+                  ),
+                }
+              : column
+          );
+
+          return {
+            ...board,
+            columns: updatedColumns,
+          };
+        }
+        return board;
+      });
+    });
+  };
+
+  const deleteTask = (boardId: string, columnId: string, taskId: string) => {
+    setBoards((prevBoards) => {
+      return prevBoards.map((board) => {
+        if (board.id === boardId) {
+          const updatedColumns = board.columns.map((column) =>
+            column.id === columnId
+              ? {
+                  ...column,
+                  tasks: column.tasks.filter((task) => task.id !== taskId),
+                }
+              : column
+          );
+
+          return {
+            ...board,
+            columns: updatedColumns,
+          };
+        }
+        return board;
+      });
+    });
   };
 
   return (
@@ -86,7 +189,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
             />
           </form>
         ) : (
-          <div 
+          <div
             className="font-medium text-sm flex-1 cursor-pointer hover:text-primary"
             onClick={() => setIsEditing(true)}
           >
@@ -94,7 +197,9 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           </div>
         )}
         <div className="flex items-center">
-          <span className="text-xs text-muted-foreground mr-2">{column.tasks.length}</span>
+          <span className="text-xs text-muted-foreground mr-2">
+            {column.tasks.length}
+          </span>
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -103,9 +208,9 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
             </PopoverTrigger>
             <PopoverContent className="w-48">
               <div className="space-y-1">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="w-full justify-start text-destructive"
                   onClick={handleDeleteColumn}
                 >
@@ -122,6 +227,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           <KanbanCard
             key={task.id}
             task={task}
+            boardId={boardId}
             columnId={column.id}
             updateTask={updateTask}
             deleteTask={deleteTask}
@@ -131,9 +237,9 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
 
       <div className="p-2">
         <Button
-          variant="ghost" 
+          variant="ghost"
           className="w-full justify-start text-sm text-muted-foreground hover:text-foreground"
-          onClick={() => addNewTask(column.id)}
+          onClick={() => addNewTask(column.id, column.id)}
         >
           <Plus size={16} className="mr-1" /> Add Task
         </Button>

@@ -1,22 +1,44 @@
-import React, { useState } from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { type Task } from './types';
-import { MoreHorizontal, Trash2 } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
-import { Button } from '~/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog';
-import { Input } from '~/components/ui/input';
-import { Textarea } from '~/components/ui/textarea';
+import React, { useState } from "react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { type Task } from "./types";
+import { MoreHorizontal, Trash2 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
 
 interface KanbanCardProps {
   task: Task;
+  boardId: string;
   columnId: string;
-  updateTask: (columnId: string, taskId: string, updatedTask: Partial<Task>) => void;
-  deleteTask: (columnId: string, taskId: string) => void;
+  updateTask: (
+    boardId: string,
+    columnId: string,
+    taskId: string,
+    updatedTask: Partial<Task>
+  ) => void;
+  deleteTask: (boardId: string, columnId: string, taskId: string) => void;
 }
 
-const KanbanCard: React.FC<KanbanCardProps> = ({ task, columnId, updateTask, deleteTask }) => {
+const KanbanCard: React.FC<KanbanCardProps> = ({
+  task,
+  boardId,
+  columnId,
+  updateTask,
+  deleteTask,
+}) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editedTask, setEditedTask] = useState({ ...task });
 
@@ -26,10 +48,10 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, columnId, updateTask, del
     setNodeRef,
     transform,
     transition,
-    isDragging
+    isDragging,
   } = useSortable({
     id: `task:${task.id}:${columnId}`,
-    data: { type: 'task', task, columnId }
+    data: { type: "task", task, columnId },
   });
 
   const style = {
@@ -44,15 +66,15 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, columnId, updateTask, del
   };
 
   const handleSaveTask = () => {
-    updateTask(columnId, task.id, {
+    updateTask(boardId, columnId, task.id, {
       title: editedTask.title,
-      description: editedTask.description
+      description: editedTask.description,
     });
     setIsDialogOpen(false);
   };
 
   const handleDeleteTask = () => {
-    deleteTask(columnId, task.id);
+    deleteTask(boardId, columnId, task.id);
   };
 
   return (
@@ -69,15 +91,22 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, columnId, updateTask, del
           <h3 className="font-medium text-sm mb-1">{task.title}</h3>
           <Popover>
             <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 opacity-0 group-hover:opacity-100"
+              >
                 <MoreHorizontal size={16} />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-48" onClick={(e) => e.stopPropagation()}>
+            <PopoverContent
+              className="w-48"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="space-y-1">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="w-full justify-start text-destructive"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -91,7 +120,9 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, columnId, updateTask, del
           </Popover>
         </div>
         {task.description && (
-          <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {task.description}
+          </p>
         )}
       </div>
 
@@ -105,20 +136,26 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ task, columnId, updateTask, del
               <Input
                 placeholder="Task title"
                 value={editedTask.title}
-                onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })}
+                onChange={(e) =>
+                  setEditedTask({ ...editedTask, title: e.target.value })
+                }
               />
             </div>
             <div className="space-y-2">
               <Textarea
                 placeholder="Add description..."
-                value={editedTask.description || ''}
-                onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
+                value={editedTask.description || ""}
+                onChange={(e) =>
+                  setEditedTask({ ...editedTask, description: e.target.value })
+                }
                 rows={5}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={handleSaveTask}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
