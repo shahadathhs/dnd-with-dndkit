@@ -131,6 +131,7 @@ body {
 
 .kanban-column {
   min-height: 500px;
+  min-width: 300px;
   transition: background-color 0.2s ease;
 }
 
