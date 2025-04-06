@@ -1,6 +1,7 @@
 import DndBoard from "~/intro/DndBoard";
 import type { Route } from "./+types/home";
 import ContentPlanner from "~/components/content-planner";
+import KanbanBoardWrapper from "~/kanban-board";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -14,7 +15,8 @@ export default function Home() {
   return (
     <main className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6">Content Planner</h1>
-      <ContentPlanner />
+      {/* <KanbanBoardWrapper /> */}
+      <DndBoard />
     </main>
   );
 }
