@@ -9,7 +9,7 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
-import { ContentPlannerProvider } from "./context/content-planner-context";
+import { ContentPlannerProvider } from "./others/context/content-planner-context";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },

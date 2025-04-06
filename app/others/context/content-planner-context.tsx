@@ -1,5 +1,3 @@
-"use client";
-
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { v4 as uuidv4 } from "uuid";
 import type { Stage, Layer, Project, TaskColumn, Task } from "~/types";

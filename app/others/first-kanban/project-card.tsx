@@ -1,17 +1,22 @@
-import { useState } from "react"
-import { useDraggable } from "@dnd-kit/core"
-import { CSS } from "@dnd-kit/utilities"
-import { Card, CardContent } from "~/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog"
-import { TaskBoard } from "~/components/task-board"
-import type { Project } from "~/types"
+import { useState } from "react";
+import { useDraggable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
+import { Card, CardContent } from "~/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { TaskBoard } from "./task-board";
+import type { Project } from "~/types";
 
 interface ProjectCardProps {
-  project: Project
+  project: Project;
 }
 
 export function ProjectCard({ project }: ProjectCardProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: project.id,
@@ -19,13 +24,13 @@ export function ProjectCard({ project }: ProjectCardProps) {
       type: "project",
       project,
     },
-  })
+  });
 
   const style = transform
     ? {
         transform: CSS.Translate.toString(transform),
       }
-    : undefined
+    : undefined;
 
   return (
     <>
@@ -40,7 +45,9 @@ export function ProjectCard({ project }: ProjectCardProps) {
         <CardContent className="p-3">
           <h3 className="font-medium">{project.title}</h3>
           {project.description && (
-            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{project.description}</p>
+            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+              {project.description}
+            </p>
           )}
         </CardContent>
       </Card>
@@ -55,7 +62,9 @@ export function ProjectCard({ project }: ProjectCardProps) {
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-medium mb-2">Description</h3>
-                <p className="text-muted-foreground">{project.description || "No description provided."}</p>
+                <p className="text-muted-foreground">
+                  {project.description || "No description provided."}
+                </p>
               </div>
 
               <div>
@@ -67,6 +76,5 @@ export function ProjectCard({ project }: ProjectCardProps) {
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }
-

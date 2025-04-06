@@ -16,9 +16,9 @@ import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Plus } from "lucide-react";
-import { SortableTaskColumn } from "~/components/sortable-task-column";
-import { TaskCard } from "~/components/task-card";
-import { useContentPlannerContext } from "~/context/content-planner-context";
+import { SortableTaskColumn } from "./sortable-task-column";
+import { TaskCard } from "./task-card";
+import { useContentPlannerContext } from "~/others/context/content-planner-context";
 import type { Task } from "~/types";
 
 interface TaskBoardProps {

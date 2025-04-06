@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -7,42 +7,47 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-} from "@dnd-kit/core"
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable"
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
-import { Button } from "~/components/ui/button"
-import { Plus } from "lucide-react"
-import { Stage } from "~/components/stage"
-import { SortableStage } from "~/components/sortable-stage"
-import { useContentPlannerContext } from "~/context/content-planner-context"
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { Button } from "~/components/ui/button";
+import { Plus } from "lucide-react";
+import { Stage } from "./stage";
+import { SortableStage } from "./sortable-stage";
+import { useContentPlannerContext } from "../context/content-planner-context";
 
 export default function ContentPlanner() {
-  const { stages, setStages, addStage } = useContentPlannerContext()
-  const [activeId, setActiveId] = useState<string | null>(null)
+  const { stages, setStages, addStage } = useContentPlannerContext();
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  )
+    })
+  );
 
   function handleDragStart(event: any) {
-    const { active } = event
-    setActiveId(active.id)
+    const { active } = event;
+    setActiveId(active.id);
   }
 
   function handleDragEnd(event: any) {
-    const { active, over } = event
+    const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = stages.findIndex((stage) => stage.id === active.id)
-      const newIndex = stages.findIndex((stage) => stage.id === over.id)
+      const oldIndex = stages.findIndex((stage) => stage.id === active.id);
+      const newIndex = stages.findIndex((stage) => stage.id === over.id);
 
-      setStages(arrayMove(stages, oldIndex, newIndex))
+      setStages(arrayMove(stages, oldIndex, newIndex));
     }
 
-    setActiveId(null)
+    setActiveId(null);
   }
 
   return (
@@ -62,7 +67,10 @@ export default function ContentPlanner() {
         onDragEnd={handleDragEnd}
         modifiers={[restrictToVerticalAxis]}
       >
-        <SortableContext items={stages.map((stage) => stage.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext
+          items={stages.map((stage) => stage.id)}
+          strategy={verticalListSortingStrategy}
+        >
           <div className="space-y-4">
             {stages.map((stage) => (
               <SortableStage key={stage.id} stage={stage} />
@@ -73,12 +81,14 @@ export default function ContentPlanner() {
         <DragOverlay>
           {activeId ? (
             <div className="opacity-80">
-              <Stage stage={stages.find((stage) => stage.id === activeId)!} overlay />
+              <Stage
+                stage={stages.find((stage) => stage.id === activeId)!}
+                overlay
+              />
             </div>
           ) : null}
         </DragOverlay>
       </DndContext>
     </div>
-  )
+  );
 }
-

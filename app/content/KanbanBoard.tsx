@@ -15,6 +15,7 @@ import { Plus, Trash2, Edit, Check } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { BoardContext } from "./BoardContext";
+import { useBoardContext } from "./useBoardContext";
 
 const KanbanBoard: React.FC = () => {
   const {
@@ -27,7 +28,7 @@ const KanbanBoard: React.FC = () => {
     addNewColumn,
     updateTask,
     deleteTask,
-  } = useContext(BoardContext)!;
+  } = useBoardContext();
 
   const [editingBoardId, setEditingBoardId] = useState<string | null>(null);
   const [editingBoardTitle, setEditingBoardTitle] = useState<string>("");
