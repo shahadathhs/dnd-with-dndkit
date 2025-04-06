@@ -1,5 +1,5 @@
+import ContentPlanner from "~/content/ContentPlanner";
 import type { Route } from "./+types/home";
-import KanbanBoard from "~/loveable-kanban/KanbanBoard";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -11,7 +11,7 @@ export function meta({}: Route.MetaArgs) {
 export default function Home() {
   return (
     <main className="container mx-auto p-4">
-      <KanbanBoard />
+      <ContentPlanner />
     </main>
   );
 }

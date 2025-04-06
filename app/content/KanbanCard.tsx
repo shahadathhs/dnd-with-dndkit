@@ -1,13 +1,9 @@
 import React, { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { type Task } from "./types";
+import type { Task } from "./types";
 import { MoreHorizontal, Trash2 } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -57,7 +53,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: 1,
+    opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 999 : 1,
   };
 
@@ -73,7 +69,8 @@ const KanbanCard: React.FC<KanbanCardProps> = ({
     setIsDialogOpen(false);
   };
 
-  const handleDeleteTask = () => {
+  const handleDeleteTask = (e: React.MouseEvent) => {
+    e.stopPropagation();
     deleteTask(boardId, columnId, task.id);
   };
 
@@ -84,7 +81,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({
         style={style}
         {...attributes}
         {...listeners}
-        className={`kanban-card group`}
+        className="kanban-card group"
         onClick={handleOpenDialog}
       >
         <div className="flex justify-between items-start">
@@ -99,19 +96,13 @@ const KanbanCard: React.FC<KanbanCardProps> = ({
                 <MoreHorizontal size={16} />
               </Button>
             </PopoverTrigger>
-            <PopoverContent
-              className="w-48"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <PopoverContent className="w-48" onClick={(e) => e.stopPropagation()}>
               <div className="space-y-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   className="w-full justify-start text-destructive"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteTask();
-                  }}
+                  onClick={handleDeleteTask}
                 >
                   <Trash2 size={16} className="mr-2" /> Delete Task
                 </Button>
