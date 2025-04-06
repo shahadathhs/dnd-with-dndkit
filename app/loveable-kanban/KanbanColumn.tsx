@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { type Board, type Column, type Task } from "./types";
 import KanbanCard from "./KanbanCard";
@@ -12,6 +11,7 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { v4 as uuidv4 } from "uuid";
+import { useDroppable } from "@dnd-kit/core";
 
 interface KanbanColumnProps {
   column: Column;
@@ -30,22 +30,13 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(column.title);
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { isOver, setNodeRef } = useDroppable({
     id: `column:${column.id}:${boardId}`,
     data: { type: "column", column },
   });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isOver ? 0.8 : 1,
   };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -177,7 +168,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
       style={style}
       className={`kanban-column flex flex-col w-72 rounded-md bg-secondary overflow-hidden`}
     >
-      <div className="kanban-column-header" {...attributes} {...listeners}>
+      <div className="kanban-column-header">
         {isEditing ? (
           <form onSubmit={handleTitleSubmit} className="w-full">
             <Input
