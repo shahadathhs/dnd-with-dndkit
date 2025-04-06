@@ -69,6 +69,9 @@ importers:
         specifier: ^11.1.0
         version: 11.1.0
     devDependencies:
+      '@netlify/vite-plugin-react-router':
+        specifier: ^0.0.0
+        version: 0.0.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.3)(vite@5.4.17(@types/node@20.17.30)(lightningcss@1.29.2))
       '@react-router/dev':
         specifier: ^7.5.0
         version: 7.5.0(@react-router/serve@7.5.0(react-router@7.5.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.8.3))(@types/node@20.17.30)(babel-plugin-macros@3.1.0)(lightningcss@1.29.2)(react-router@7.5.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.8.3)(vite@5.4.17(@types/node@20.17.30)(lightningcss@1.29.2))
@@ -502,6 +505,12 @@ packages:
 
   '@mjackson/node-fetch-server@0.2.0':
     resolution: {integrity: sha512-EMlH1e30yzmTpGLQjlFmaDAjyOeZhng1/XCd7DExR8PNAnG/G1tyruZxEoUe11ClnwGhGrtsdnyyUx1frSzjng==}
+
+  '@netlify/vite-plugin-react-router@0.0.0':
+    resolution: {integrity: sha512-yZklJbeqYdiFyipaI/NY4qJEqvoVIJ2fLtVISvvy8J/60jJETULXbKTT+/ez2HoKFbWjm0TlTrMs1m9Pt69Xsg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      vite: '>=5.0.0'
 
   '@npmcli/git@4.1.0':
     resolution: {integrity: sha512-9hwoB3gStVfa0N31ymBmrX+GuDGdVA/QWShZVqE0HK2Af+7QGGrCTbZia/SW0ImUTjTne7SP91qxDmtXvDHRPQ==}
@@ -2811,6 +2820,17 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.0
 
   '@mjackson/node-fetch-server@0.2.0': {}
+
+  '@netlify/vite-plugin-react-router@0.0.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.3)(vite@5.4.17(@types/node@20.17.30)(lightningcss@1.29.2))':
+    dependencies:
+      '@react-router/node': 7.5.0(react-router@7.5.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.8.3)
+      isbot: 5.1.25
+      react-router: 7.5.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      vite: 5.4.17(@types/node@20.17.30)(lightningcss@1.29.2)
+    transitivePeerDependencies:
+      - react
+      - react-dom
+      - typescript
 
   '@npmcli/git@4.1.0':
     dependencies:
