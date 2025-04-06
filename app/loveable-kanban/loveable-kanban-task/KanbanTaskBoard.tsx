@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { DndContext, type DragEndEvent, type DragOverEvent, type DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import KanbanColumn from './KanbanColumn';
+import KanbanColumn from './KanbanTaskColumn';
 import { Plus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '~/components/ui/button';
